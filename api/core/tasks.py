@@ -79,6 +79,7 @@ def merge_chunk(chunk_index, file_name):
         return None
 
 
+@shared_task(name="core.merge_chunks_task")
 def merge_chunks_task(file_name, total_chunks):
     """Junta os chunks sequencialmente"""
     upload_dir = os.path.join(settings.MEDIA_ROOT, "uploads")
@@ -109,3 +110,17 @@ def merge_chunks_task(file_name, total_chunks):
         return f"Erro inesperado ao montar o arquivo: {e}"
 
     return f"Arquivo {file_name} montado com sucesso!"
+
+
+@shared_task(name="core.save_chunk")
+def save_chunk(file_content, file_path, chunk_number, total_chunks):
+    """Salva o chunk de forma assíncrona em segundo plano."""
+    try:
+        os.makedirs(
+            os.path.dirname(file_path), exist_ok=True
+        )  # Criar diretório se necessário
+        with default_storage.open(file_path, "wb") as f:
+            f.write(file_content)
+    except Exception as e:
+        return {"error": str(e)}
+    return {"message": f"Chunk salvo em {file_path}"}

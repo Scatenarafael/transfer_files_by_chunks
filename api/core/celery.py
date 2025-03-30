@@ -15,11 +15,15 @@ app.config_from_object("django.conf:settings", namespace="CELERY")
 # Definição das filas
 app.conf.task_queues = (Queue("emails"),)  # Fila para envio de e-mails
 app.conf.task_queues = (Queue("files"),)  # Fila para envio de e-mails
+app.conf.task_queues = (Queue("chunkFiles"),)  # Fila para envio de e-mails
+app.conf.task_queues = (Queue("mergeTask"),)  # Fila para envio de e-mails
 
 # Definição de roteamento automático
 app.conf.task_routes = {
     "core.send_email": {"queue": "emails"},
     "core.move_files": {"queue": "files"},
+    "core.save_chunk": {"queue": "chunkFiles"},
+    "core.merge_chunks_task": {"queue": "mergeTask"},
 }
 
 

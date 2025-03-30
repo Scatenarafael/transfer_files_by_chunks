@@ -23,17 +23,17 @@ function App() {
     formData.append("total_chunks", totalChunks.toString());
     formData.append("file_name", file.name);
     
-    try {
-      const response = await api.put('/api/upload/', formData, { headers: {'Content-Type': 'multipart/form-data'} })
+    // try {
+    //   const response = await api.put('/api/upload/', formData, { headers: {'Content-Type': 'multipart/form-data'} })
 
-      if (response.status !== 200) {
-        throw new Error(`Could not merge chunks`)
-      }
+    //   if (response.status !== 200) {
+    //     throw new Error(`Could not merge chunks`)
+    //   }
 
 
-    } catch (error) {
+    // } catch (error) {
 
-    }
+    // }
   }
   
   const uploadChunk = async (chunk: Blob, chunkIndex: number, totalChunks: number, fileName: string) => {

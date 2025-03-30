@@ -8,7 +8,7 @@ from rest_framework import response, status
 from rest_framework.views import APIView
 
 # from core.settings import BASE_DIR
-from core.tasks import move_files, send_email
+from core.tasks import move_files, send_email, write
 
 logger = logging.getLogger("conections_logger")
 
@@ -71,6 +71,7 @@ class TaskView(APIView):
         # get_filenames_by_dir(f"{BASE_DIR}/dados")
         # start_task()
         # start_email_queue()
+        write.delay()
         return response.Response(
             {"msg": "Helloworld"}, status=status.HTTP_200_OK
         )
