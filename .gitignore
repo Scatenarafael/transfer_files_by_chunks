@@ -1,0 +1,8 @@
+venv/
+staticfiles/
+static/
+*.pyc
+__pycache__/
+*.log
+*.dasf
+*.deb
