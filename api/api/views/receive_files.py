@@ -1,11 +1,15 @@
 import logging
-import threading
+import os
 
-from rest_framework import status
-from rest_framework.response import Response
-from rest_framework.views import APIView
+# import threading
+import time
 
 from core.tasks import merge_chunks_task, save_chunk
+from django.core.files.storage import default_storage
+
+# from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 logger = logging.getLogger("conections_logger")
 
@@ -48,6 +52,7 @@ class AsyncChunkedFileUploadView(APIView):
 
         if chunk_number == total_chunks - 1:
             logger.debug(f"Ultimo chunk recebido: {chunk_number}")
+            time.sleep(1)  # Aguarda o processamento do último chunk
             # Chama a tarefa de merge_chunks_task
             merge_chunks_task.delay(file_name, total_chunks)
 
@@ -56,23 +61,58 @@ class AsyncChunkedFileUploadView(APIView):
             status=200,
         )
 
-    def put(self, request):
-        """Finaliza o upload chamando Celery para juntar os chunks"""
+    # def put(self, request):
+    #     """Finaliza o upload chamando Celery para juntar os chunks"""
+    #     file_name = request.data.get("file_name")
+    #     total_chunks = int(request.data.get("total_chunks", 1))
+
+    #     logger.debug(f"Beginnning to merge chunks of {file_name}...")
+    #     logger.debug(f"Total chunks {total_chunks}...")
+
+    #     # Dispara a tarefa assíncrona
+    #     thread = threading.Thread(
+    #         target=merge_chunks_task,
+    #         args=(file_name, total_chunks),
+    #     )
+    #     thread.start()
+    #     # merge_chunks_task(file_name, total_chunks)
+
+    #     return Response(
+    #         {"message": "Upload em processamento"},
+    #         status=status.HTTP_202_ACCEPTED,
+    #     )
+
+
+def save_file(file_content, file_path):
+    """Salva o chunk de forma assíncrona em segundo plano."""
+    try:
+        os.makedirs(
+            os.path.dirname(file_path), exist_ok=True
+        )  # Criar diretório se necessário
+        with default_storage.open(file_path, "wb") as f:
+            f.write(file_content)
+    except Exception as e:
+        return {"error": str(e)}
+    return {"message": f"Chunk salvo em {file_path}"}
+
+
+class AsyncFileUploadView(APIView):
+    def post(self, request):
+        """Recebe o chunk e delega a tarefa ao Celery"""
+        file = request.FILES.get("file")
         file_name = request.data.get("file_name")
-        total_chunks = int(request.data.get("total_chunks", 1))
+        file_path = f"uploads/standard/{file_name}"
 
-        logger.debug(f"Beginnning to merge chunks of {file_name}...")
-        logger.debug(f"Total chunks {total_chunks}...")
+        if not file:
+            return Response({"error": "Nenhum arquivo enviado"}, status=400)
 
-        # Dispara a tarefa assíncrona
-        thread = threading.Thread(
-            target=merge_chunks_task,
-            args=(file_name, total_chunks),
-        )
-        thread.start()
-        # merge_chunks_task(file_name, total_chunks)
+        # ✅ Ler o conteúdo antes de enviar para Celery (pois FILES é um stream)
+        file_content = file.read()
+
+        # ✅ Enviar a tarefa para Celery (worker processa em background)
+        save_file(file_path, file_content)
 
         return Response(
-            {"message": "Upload em processamento"},
-            status=status.HTTP_202_ACCEPTED,
+            {"message": "Arquivo recebido com sucesso"},
+            status=200,
         )

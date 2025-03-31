@@ -58,7 +58,7 @@ function App() {
   }
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    const fileInput = event.currentTarget.elements.namedItem('file') as HTMLInputElement
+    const fileInput = event.currentTarget.elements.namedItem('file_by_chunks') as HTMLInputElement
     if (fileInput && fileInput.files) {
       const file = fileInput.files[0]
       if (file) {
@@ -67,15 +67,61 @@ function App() {
     }
   }
 
-  return (
-    <div>
-      <h1 className="font-bold h-32 flex-1">file by chunks test</h1>
 
-      <form onSubmit={handleSubmit} className="flex gap-4 items-center justify-center">
-        <label htmlFor="file" className="block p-2 bg-amber-300 cursor-pointer border-2 rounded-md text-sm font-medium text-gray-900 dark:text-white">Select file</label>
-        <input className="sr-only" type="file" name="file" id="file" />
-        <button type="submit">Upload</button>
-      </form>
+  const handleFileStandardUpload = async (event: { target: { files: File[] | null } }) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    const formData = new FormData()
+    formData.append("file", file);
+    formData.append("file_name", file.name);
+    
+    try {
+      const response = await api.post('/api/upload/standard/', formData, { headers: {'Content-Type': 'multipart/form-data'} })
+
+      if (response.status !== 200) {
+        throw new Error(`Could not merge chunks`)
+      }
+
+
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+
+  const handleStandardSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const fileInput = event.currentTarget.elements.namedItem('file') as HTMLInputElement
+    if (fileInput && fileInput.files) {
+      const file = fileInput.files[0]
+      if (file) {
+        handleFileStandardUpload({ target: { files: [file] } })
+      }
+    }
+  }
+
+  return (
+    <div className="mx-auto mt-20 bg-zinc-300 max-w-[40rem]">
+      <div className="flex flex-col justify-center items-center gap-4 p-4">
+        <h1 className="font-bold">File Upload</h1>
+
+        <form onSubmit={handleStandardSubmit} className="flex gap-4 items-center justify-center">
+          <label htmlFor="file" className="block p-2 bg-amber-300 cursor-pointer border-2 rounded-md text-sm font-medium text-gray-900 dark:text-white">Select file</label>
+          <input className="sr-only" type="file" name="file" id="file" />
+          <button className="p-1.5 bg-sky-300 rounded-md border-2" type="submit">Upload</button>
+        </form>
+      </div>
+
+      <div className="flex flex-col justify-center items-center gap-4 p-4">
+        <h1 className="font-bold">File Upload by chunks</h1>
+
+        <form onSubmit={handleSubmit} className="flex gap-4 items-center justify-center">
+          <label htmlFor="file_by_chunks" className="block p-2 bg-amber-300 cursor-pointer border-2 rounded-md text-sm font-medium text-gray-900 dark:text-white">Select file</label>
+          <input className="sr-only" type="file" name="file_by_chunks" id="file_by_chunks" />
+          <button className="p-1.5 bg-sky-300 rounded-md border-2" type="submit">Upload</button>
+        </form>
+      </div>
       
     </div>
   )
