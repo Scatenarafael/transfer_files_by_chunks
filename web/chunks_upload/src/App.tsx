@@ -6,7 +6,7 @@ function App() {
     const file = event.target.files?.[0]
     if (!file) return
 
-    const chunkSize = 1024 * 1024 // 1MB
+    const chunkSize = 1024 * 1024 * 10 // 10MB
     const totalChunks = Math.ceil(file.size / chunkSize)
 
     for (let i = 0; i < totalChunks; i++) {

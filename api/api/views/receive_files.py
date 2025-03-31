@@ -5,6 +5,7 @@ import os
 import time
 
 from core.tasks import merge_chunks_task, save_chunk
+from django.conf import settings
 from django.core.files.storage import default_storage
 
 # from rest_framework import status
@@ -85,10 +86,9 @@ class AsyncChunkedFileUploadView(APIView):
 
 def save_file(file_content, file_path):
     """Salva o chunk de forma assíncrona em segundo plano."""
+    logger.debug(f"Standard Upload - Salvando arquivo: {file_path}")
     try:
-        os.makedirs(
-            os.path.dirname(file_path), exist_ok=True
-        )  # Criar diretório se necessário
+
         with default_storage.open(file_path, "wb") as f:
             f.write(file_content)
     except Exception as e:
@@ -101,16 +101,31 @@ class AsyncFileUploadView(APIView):
         """Recebe o chunk e delega a tarefa ao Celery"""
         file = request.FILES.get("file")
         file_name = request.data.get("file_name")
-        file_path = f"uploads/standard/{file_name}"
+
+        upload_dir = os.path.join(settings.MEDIA_ROOT, "uploads/standard")
+        file_path = os.path.join(upload_dir, file_name)
+
+        # Garante que a pasta 'uploads/' existe
+        if not os.path.exists(upload_dir):
+            os.makedirs(upload_dir)
+
+        logger.debug(f"Standard Upload - file_path: {file_path}")
+        logger.debug(f"Standard Upload - file_name: {file_name}")
 
         if not file:
             return Response({"error": "Nenhum arquivo enviado"}, status=400)
 
         # ✅ Ler o conteúdo antes de enviar para Celery (pois FILES é um stream)
         file_content = file.read()
+        file_size = len(
+            file_content
+        )  # Identifica o tamanho do conteúdo do arquivo
+        logger.debug(
+            f"Standard Upload - Tamanho do arquivo recebido: {file_size} bytes"
+        )
 
         # ✅ Enviar a tarefa para Celery (worker processa em background)
-        save_file(file_path, file_content)
+        save_file(file_content, file_path)
 
         return Response(
             {"message": "Arquivo recebido com sucesso"},
