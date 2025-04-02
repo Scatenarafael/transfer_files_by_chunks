@@ -1,6 +1,11 @@
+import { useState } from "react"
+import { Button } from "./components/ui/button"
+import { Progress } from "./components/ui/progress"
 import { api } from "./lib/axios"
 
 function App() {
+  const [progress, setProgress] = useState(0)
+  const [filename, setFileName] = useState("")
 
   const handleFileUpload = async (event: { target: { files: File[] | null } }) => {
     const file = event.target.files?.[0]
@@ -18,6 +23,7 @@ function App() {
 
       // Upload the chunk to your server
       await uploadChunk(chunk, i, totalChunks, file.name)
+      setProgress(Math.round(((i + 1) / totalChunks) * 100))
     }
     const formData = new FormData()
     formData.append("total_chunks", totalChunks.toString());
@@ -62,6 +68,7 @@ function App() {
     if (fileInput && fileInput.files) {
       const file = fileInput.files[0]
       if (file) {
+        setFileName(file.name)
         handleFileUpload({ target: { files: [file] } })
       }
     }
@@ -71,6 +78,7 @@ function App() {
   const handleFileStandardUpload = async (event: { target: { files: File[] | null } }) => {
     const file = event.target.files?.[0]
     if (!file) return
+
 
     const formData = new FormData()
     formData.append("file", file);
@@ -96,6 +104,7 @@ function App() {
     if (fileInput && fileInput.files) {
       const file = fileInput.files[0]
       if (file) {
+        setFileName(file.name)
         handleFileStandardUpload({ target: { files: [file] } })
       }
     }
@@ -109,7 +118,7 @@ function App() {
         <form onSubmit={handleStandardSubmit} className="flex gap-4 items-center justify-center">
           <label htmlFor="file" className="block p-2 bg-amber-300 cursor-pointer border-2 rounded-md text-sm font-medium text-gray-900 dark:text-white">Select file</label>
           <input className="sr-only" type="file" name="file" id="file" />
-          <button className="p-1.5 bg-sky-300 rounded-md border-2" type="submit">Upload</button>
+          <Button type="submit">Upload</Button>
         </form>
       </div>
 
@@ -119,8 +128,12 @@ function App() {
         <form onSubmit={handleSubmit} className="flex gap-4 items-center justify-center">
           <label htmlFor="file_by_chunks" className="block p-2 bg-amber-300 cursor-pointer border-2 rounded-md text-sm font-medium text-gray-900 dark:text-white">Select file</label>
           <input className="sr-only" type="file" name="file_by_chunks" id="file_by_chunks" />
-          <button className="p-1.5 bg-sky-300 rounded-md border-2" type="submit">Upload</button>
+          <Button type="submit">Upload</Button>
         </form>
+
+        <p>{filename}</p>
+
+        <Progress className="max-w-1/2" value={progress} />
       </div>
       
     </div>
